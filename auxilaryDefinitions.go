@@ -1,6 +1,14 @@
 package pinochle
 
+import (
+	"errors"
+	"math/rand"
+	"time"
+)
+
 type player interface {
+	pushToHand(card Card)
+	getHand() []Card
 }
 
 // Card is the fundamental type for each playing card.
@@ -9,26 +17,49 @@ type Card struct {
 	suit      string
 }
 
-// Hand is a slice of cards belonging to each player.
-type Hand []Card
+// DummyCard is a blank place holder for compliance with player interface.
+var DummyCard = Card{"", ""}
 
-// Deck is a slice of cards representing the stack.
-type Deck []Card
+// Deck is a slice of cards representing the stack. It satisfies the Shuffler interface.
+type Deck struct {
+	stack []Card
+	trump Card
+}
 
-type meld []Card
+func (d *Deck) pop() (Card, error) {
+	if len(d.stack) < 1 {
+		return DummyCard, errors.New("type Deck has no cards")
+	}
+
+	top := d.stack[len(d.stack)-1]
+	d.stack = d.stack[:len(d.stack)-1]
+	return top, nil
+}
 
 var faceValues = []string{"A", "10", "K", "Q", "J", "9"}
 var suits = []string{"S", "D", "Q", "H"}
 
-func buildDeck() Deck {
-	var deck Deck
+// buildDeck generates a Deck; it shuffle determines whether or not the Deck is shuffled.
+func buildDeck(shuffle bool) Deck {
+	var stack []Card
 	for _, suit := range suits {
 		for _, face := range faceValues {
-			deck = append(deck, Card{face, suit})
+			stack = append(stack, Card{face, suit}, Card{face, suit})
 		}
 	}
 
-	return deck
+	if shuffle {
+		shuffledstack := make([]Card, len(stack))
+		rand.Seed(time.Now().UTC().UnixNano())
+		perm := rand.Perm(len(stack))
+		for srcIdx, destIdx := range perm {
+			shuffledstack[destIdx] = stack[srcIdx]
+		}
+
+		return Deck{shuffledstack, DummyCard}
+	}
+
+	return Deck{stack, DummyCard}
 }
 
 // Top level points container.
