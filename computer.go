@@ -2,7 +2,17 @@ package pinochle
 
 // Computer is an object satisfying the player interface.
 type Computer struct {
-	hand []Card
+	hand         []Card
+	currentScore int
+	melds        [][]Card
+}
+
+func (c *Computer) getMelds() [][]Card {
+	return c.melds
+}
+
+func (c *Computer) score() int {
+	return c.currentScore
 }
 
 func (c *Computer) pushToHand(card Card) {

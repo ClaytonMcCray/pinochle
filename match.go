@@ -1,12 +1,13 @@
 package pinochle
 
 // InitializeMatch will build a Match and return it
-func InitializeMatch(pOne, pTwo player, shuffle bool) Match {
+func InitializeMatch(pOne, pTwo player, shuffle bool, playingTo int) Match {
 	match := Match{
 		pointValues: initializePoints(),
 		playerOne:   pOne,
 		playerTwo:   pTwo,
 		deck:        buildDeck(shuffle),
+		playingTo:   playingTo,
 	}
 
 	return match
@@ -19,60 +20,49 @@ type Match struct {
 	playerTwo       player
 	deck            Deck
 	dealerPlayerOne bool
+	playingTo       int
 }
 
 // Deal will deal cards to playerOne and playerTwo.
-func (match *Match) Deal() {
+func (match *Match) Deal() error {
 	for i := 0; i < 4; i++ {
 		if match.dealerPlayerOne {
-			if card, err := match.deck.pop(); err == nil {
+
+			for j := 0; j < 3; j++ {
+				card, err := match.deck.pop()
+				if err != nil {
+					return err
+				}
+
 				match.playerTwo.pushToHand(card)
 			}
 
-			if card, err := match.deck.pop(); err == nil {
-				match.playerTwo.pushToHand(card)
-			}
+			for j := 0; j < 3; j++ {
+				card, err := match.deck.pop()
+				if err != nil {
+					return err
+				}
 
-			if card, err := match.deck.pop(); err == nil {
-				match.playerTwo.pushToHand(card)
-			}
-
-			// ************************************************
-			if card, err := match.deck.pop(); err == nil {
-				match.playerOne.pushToHand(card)
-			}
-
-			if card, err := match.deck.pop(); err == nil {
-				match.playerOne.pushToHand(card)
-			}
-
-			if card, err := match.deck.pop(); err == nil {
 				match.playerOne.pushToHand(card)
 			}
 
 		} else {
-			if card, err := match.deck.pop(); err == nil {
+
+			for j := 0; j < 3; j++ {
+				card, err := match.deck.pop()
+				if err != nil {
+					return err
+				}
+
 				match.playerOne.pushToHand(card)
 			}
 
-			if card, err := match.deck.pop(); err == nil {
-				match.playerOne.pushToHand(card)
-			}
+			for j := 0; j < 3; j++ {
+				card, err := match.deck.pop()
+				if err != nil {
+					return err
+				}
 
-			if card, err := match.deck.pop(); err == nil {
-				match.playerOne.pushToHand(card)
-			}
-
-			// ***********************************************
-			if card, err := match.deck.pop(); err == nil {
-				match.playerTwo.pushToHand(card)
-			}
-
-			if card, err := match.deck.pop(); err == nil {
-				match.playerTwo.pushToHand(card)
-			}
-
-			if card, err := match.deck.pop(); err == nil {
 				match.playerTwo.pushToHand(card)
 			}
 		}
@@ -81,8 +71,10 @@ func (match *Match) Deal() {
 	match.dealerPlayerOne = !match.dealerPlayerOne
 	card, err := match.deck.pop()
 	if err != nil {
-		match.deck.trump = card
+		return err
 	}
+	match.deck.trump = card
+	return nil
 }
 
 // PlayerOneHand accesses the interface method player.getHand()
@@ -95,13 +87,24 @@ func (match *Match) PlayerTwoHand() []Card {
 	return match.playerTwo.getHand()
 }
 
+// MatchOver returns whether or not one of the players but not both has reached the cap.
+func (match *Match) MatchOver() bool {
+	pOneWins := match.playerOne.score() >= match.playingTo
+	pTwoWins := match.playerTwo.score() >= match.playingTo
+	return (pOneWins || pTwoWins) && !(pOneWins && pTwoWins)
+}
+
+// PlayerOneMelds returns a slice of card slices; the internal slices are the individual melds
+func (match *Match) PlayerOneMelds() [][]Card {
+	return match.playerOne.getMelds()
+}
+
+// PlayerTwoMelds returns a slice of card slices; the internal slices are the individual melds
+func (match *Match) PlayerTwoMelds() [][]Card {
+	return match.playerTwo.getMelds()
+}
+
 /*
-func (match *Match) MatchOver() bool {}
-
-func (match *Match) PlayerOneMelds() [][]Card {}
-
-func (match *Match) PlayerTwoMelds() [][]Card {}
-
 func (match *Match) TrickPhase() bool {}
 
 func (match *Match) Playoff() bool {}

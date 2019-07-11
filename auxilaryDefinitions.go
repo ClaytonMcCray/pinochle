@@ -9,6 +9,8 @@ import (
 type player interface {
 	pushToHand(card Card)
 	getHand() []Card
+	score() int
+	getMelds() [][]Card
 }
 
 // Card is the fundamental type for each playing card.
@@ -37,7 +39,7 @@ func (d *Deck) pop() (Card, error) {
 }
 
 var faceValues = []string{"A", "10", "K", "Q", "J", "9"}
-var suits = []string{"S", "D", "Q", "H"}
+var suits = []string{"S", "D", "C", "H"}
 
 // buildDeck generates a Deck; it shuffle determines whether or not the Deck is shuffled.
 func buildDeck(shuffle bool) Deck {
@@ -60,6 +62,12 @@ func buildDeck(shuffle bool) Deck {
 	}
 
 	return Deck{stack, DummyCard}
+}
+
+// CompareCards determines whether or not two cards are equivalent. This will be useful
+// for evaluating the validity of melds.
+func CompareCards(first, second Card) bool {
+	return first.faceValue == second.faceValue && first.suit == second.suit
 }
 
 // Top level points container.
