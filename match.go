@@ -1,13 +1,16 @@
 package pinochle
 
+import "fmt"
+
 // InitializeMatch will build a Match and return it
 func InitializeMatch(pOne, pTwo player, shuffle bool, playingTo int) Match {
 	match := Match{
-		pointValues: initializePoints(),
-		playerOne:   pOne,
-		playerTwo:   pTwo,
-		deck:        buildDeck(shuffle),
-		playingTo:   playingTo,
+		pointValues:     initializePoints(),
+		playerOne:       pOne,
+		playerTwo:       pTwo,
+		deck:            buildDeck(shuffle),
+		playingTo:       playingTo,
+		dealerPlayerOne: true,
 	}
 
 	return match
@@ -15,12 +18,13 @@ func InitializeMatch(pOne, pTwo player, shuffle bool, playingTo int) Match {
 
 // Match is the pinochle game controller
 type Match struct {
-	pointValues     points
-	playerOne       player
-	playerTwo       player
-	deck            Deck
-	dealerPlayerOne bool
-	playingTo       int
+	pointValues        points
+	playerOne          player
+	playerTwo          player
+	deck               Deck
+	dealerPlayerOne    bool
+	playingTo          int
+	mostRecentlyPlayed [2]Card
 }
 
 // Deal will deal cards to playerOne and playerTwo.
@@ -141,13 +145,46 @@ func (match *Match) PlayerOneTurn() bool {
 	return match.dealerPlayerOne
 }
 
+// PlayerOnePlayed pushes playerOne's card into mostRecentlyPlayed, and
+// returns an error if playerOne doesn't have the card in question.
+func (match *Match) PlayerOnePlayed(card Card) error {
+	if match.handContains(match.playerOne.getHand(), card) {
+		match.mostRecentlyPlayed[0] = card
+		return nil
+	}
+	return fmt.Errorf("playerOne's hand doesn't contain card %v", card)
+}
+
+// PlayerTwoPlayed pushes playerTwo's card into mostRecentlyPlayed.
+func (match *Match) PlayerTwoPlayed(card Card) error {
+	if match.handContains(match.playerTwo.getHand(), card) {
+		match.mostRecentlyPlayed[1] = card
+		return nil
+	}
+	return fmt.Errorf("playerTwo's hand doesn't contain card %v", card)
+}
+
+func (match *Match) handContains(hand []Card, card Card) bool {
+	for _, c := range hand {
+		if CompareCards(c, card) {
+			return true
+		}
+	}
+
+	return false
+}
+
+// CardsPlayedInTrick returns an array of the cards played in the most recent trick.
+// It returns an error if match.mostRecentlyPlayed contains one or more DummyCard's.
+func (match *Match) CardsPlayedInTrick() ([2]Card, error) {
+	if CompareCards(match.mostRecentlyPlayed[0], DummyCard) || CompareCards(match.mostRecentlyPlayed[1], DummyCard) {
+		return match.mostRecentlyPlayed, fmt.Errorf("match.mostRecentlyPlayed contains %v", match.mostRecentlyPlayed)
+	}
+
+	return match.mostRecentlyPlayed, nil
+}
+
 /*
-func (match *Match) PlayerOnePlayed(card Card) bool {}
-
-func (match *Match) PlayerTwoPlayed(card Card) bool {}
-
-func (match *Match) CardsPlayedInTrick() [2]Card {}
-
 func (match *Match) DecideTrickWinner() {}
 
 func (match *Match) AssignTrickPoints() {}
