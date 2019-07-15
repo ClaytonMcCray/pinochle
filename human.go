@@ -7,6 +7,10 @@ type Human struct {
 	melds        [][]Card
 }
 
+func (h *Human) hasCards() bool {
+	return len(h.hand) > 0
+}
+
 func (h *Human) getMelds() [][]Card {
 	return h.melds
 }

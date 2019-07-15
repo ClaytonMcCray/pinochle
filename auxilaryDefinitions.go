@@ -11,6 +11,7 @@ type player interface {
 	getHand() []Card
 	score() int
 	getMelds() [][]Card
+	hasCards() bool
 }
 
 // Card is the fundamental type for each playing card.

@@ -7,8 +7,8 @@ type Computer struct {
 	melds        [][]Card
 }
 
-func (c *Computer) getMelds() [][]Card {
-	return c.melds
+func (c *Computer) hasCards() bool {
+	return len(c.hand) > 0
 }
 
 func (c *Computer) score() int {

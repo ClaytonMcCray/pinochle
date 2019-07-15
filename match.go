@@ -104,13 +104,44 @@ func (match *Match) PlayerTwoMelds() [][]Card {
 	return match.playerTwo.getMelds()
 }
 
+// TrickPhase returns true while there are cards in the stack.
+func (match *Match) TrickPhase() bool {
+	return len(match.deck.stack) > 0
+}
+
+// DealToPlayerOne deals a card to playerOne
+func (match *Match) DealToPlayerOne() error {
+	card, err := match.deck.pop()
+	if err != nil {
+		return err
+	}
+
+	match.playerOne.pushToHand(card)
+	return nil
+}
+
+// DealToPlayerTwo deals a card to playerTwo
+func (match *Match) DealToPlayerTwo() error {
+	card, err := match.deck.pop()
+	if err != nil {
+		return err
+	}
+
+	match.playerTwo.pushToHand(card)
+	return nil
+}
+
+// Playoff returns true while either player still has cards.
+func (match *Match) Playoff() bool {
+	return match.playerOne.hasCards() || match.playerTwo.hasCards()
+}
+
+// PlayerOneTurn returns the internal value dealerPlayerOne.
+func (match *Match) PlayerOneTurn() bool {
+	return match.dealerPlayerOne
+}
+
 /*
-func (match *Match) TrickPhase() bool {}
-
-func (match *Match) Playoff() bool {}
-
-func (match *Match) PlayerOneTurn() bool {}
-
 func (match *Match) PlayerOnePlayed(card Card) bool {}
 
 func (match *Match) PlayerTwoPlayed(card Card) bool {}
