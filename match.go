@@ -137,7 +137,7 @@ func (match *Match) DealToPlayerTwo() error {
 
 // Playoff returns true while either player still has cards.
 func (match *Match) Playoff() bool {
-	return match.playerOne.hasCards() || match.playerTwo.hasCards()
+	return (match.playerOne.hasCards() || match.playerTwo.hasCards()) && !match.TrickPhase()
 }
 
 // PlayerOneTurn returns the internal value dealerPlayerOne.
@@ -145,23 +145,36 @@ func (match *Match) PlayerOneTurn() bool {
 	return match.dealerPlayerOne
 }
 
-// PlayerOnePlayed pushes playerOne's card into mostRecentlyPlayed, and
-// returns an error if playerOne doesn't have the card in question.
-func (match *Match) PlayerOnePlayed(card Card) error {
-	if match.handContains(match.playerOne.getHand(), card) {
-		match.mostRecentlyPlayed[0] = card
-		return nil
-	}
-	return fmt.Errorf("playerOne's hand doesn't contain card %v", card)
+func (match *Match) storePlayerOneCard(card Card) {
+	match.mostRecentlyPlayed[0] = card
 }
 
-// PlayerTwoPlayed pushes playerTwo's card into mostRecentlyPlayed.
-func (match *Match) PlayerTwoPlayed(card Card) error {
-	if match.handContains(match.playerTwo.getHand(), card) {
-		match.mostRecentlyPlayed[1] = card
-		return nil
+func (match *Match) storePlayerTwoCard(card Card) {
+	match.mostRecentlyPlayed[1] = card
+}
+
+// PlayerOnePlayed validates the card that playerOne wants to play,
+// then stores it. An error is returned if playerOne's hand doesn't contain the card.
+func (match *Match) PlayerOnePlayed(card Card) error {
+	validatedCard, err := match.playerOne.play(card)
+	if err != nil {
+		return err
 	}
-	return fmt.Errorf("playerTwo's hand doesn't contain card %v", card)
+
+	match.storePlayerOneCard(validatedCard)
+	return nil
+}
+
+// PlayerTwoPlayed validates the card that playerTwo wants to play,
+// then stores it. An error is returned if playerTwo's hand doesn't contain the card.
+func (match *Match) PlayerTwoPlayed(card Card) error {
+	validatedCard, err := match.playerTwo.play(card)
+	if err != nil {
+		return err
+	}
+
+	match.storePlayerTwoCard(validatedCard)
+	return nil
 }
 
 func (match *Match) handContains(hand []Card, card Card) bool {

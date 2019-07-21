@@ -125,3 +125,42 @@ func TestBuildDeckGeneration(t *testing.T) {
 		}
 	}
 }
+
+func TestDealingCards(t *testing.T) {
+	playerOne := Human{}
+	playerTwo := Computer{}
+
+	match := InitializeMatch(&playerOne, &playerTwo, true, 100)
+	match.Deal()
+
+	for match.TrickPhase() {
+		errPlayPlayerOne := match.PlayerOnePlayed(match.playerOne.getHand()[0])
+		errPlayPlayerTwo := match.PlayerTwoPlayed(DummyCard)
+		if errPlayPlayerOne != nil {
+			t.Error("playerOne got an error while playing a card (trick phase) : " + errPlayPlayerOne.Error())
+		}
+		if errPlayPlayerTwo != nil {
+			t.Error("playerTwo got an error while playing a card (trick phase) : " + errPlayPlayerTwo.Error())
+		}
+
+		errDealPlayerOne := match.DealToPlayerOne()
+		errDealPlayerTwo := match.DealToPlayerTwo()
+		if errDealPlayerOne != nil {
+			t.Error("playerOne got an error while being dealt a card : " + errDealPlayerOne.Error())
+		}
+		if errDealPlayerTwo != nil {
+			t.Error("playerTwo got an error while being dealt a card : " + errDealPlayerTwo.Error())
+		}
+	}
+
+	for match.Playoff() {
+		errPlayPlayerOne := match.PlayerOnePlayed(match.playerOne.getHand()[0])
+		errPlayPlayerTwo := match.PlayerTwoPlayed(DummyCard)
+		if errPlayPlayerOne != nil {
+			t.Error("playerOne got an error while playing a card (playoff) : " + errPlayPlayerOne.Error())
+		}
+		if errPlayPlayerTwo != nil {
+			t.Error("playerTwo got an error while playing a card (playoff)")
+		}
+	}
+}

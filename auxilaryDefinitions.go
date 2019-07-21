@@ -12,6 +12,7 @@ type player interface {
 	score() int
 	getMelds() [][]Card
 	hasCards() bool
+	play(card Card) (Card, error)
 }
 
 // Card is the fundamental type for each playing card.
@@ -63,6 +64,10 @@ func buildDeck(shuffle bool) Deck {
 	}
 
 	return Deck{stack, DummyCard}
+}
+
+func removeCard(hand []Card, idx int) []Card {
+	return append(hand[:idx], hand[idx+1:]...)
 }
 
 // CompareCards determines whether or not two cards are equivalent. This will be useful

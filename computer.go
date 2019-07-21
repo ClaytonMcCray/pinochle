@@ -1,5 +1,7 @@
 package pinochle
 
+import "errors"
+
 // Computer is an object satisfying the player interface.
 type Computer struct {
 	hand         []Card
@@ -25,4 +27,16 @@ func (c *Computer) pushToHand(card Card) {
 
 func (c *Computer) getHand() []Card {
 	return c.hand
+}
+
+// play for Computer takes in a DummyCard for the sake of satisfying
+// the player interface. It returns the card the Computer chooses to play.
+func (c *Computer) play(card Card) (Card, error) {
+	if c.hasCards() {
+		temp := c.hand[len(c.hand)-1]
+		c.hand = removeCard(c.hand, len(c.hand)-1)
+		return temp, nil
+	}
+
+	return card, errors.New("hand of Computer is empty")
 }
