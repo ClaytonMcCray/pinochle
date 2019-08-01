@@ -3,12 +3,11 @@ package pinochle
 import "fmt"
 
 // InitializeMatch will build a Match and return it
-func InitializeMatch(pOne, pTwo player, shuffle bool, playingTo int) Match {
+func InitializeMatch(pOne, pTwo player, playingTo int) Match {
 	match := Match{
 		pointValues:     initializePoints(),
 		playerOne:       pOne,
 		playerTwo:       pTwo,
-		deck:            buildDeck(shuffle),
 		playingTo:       playingTo,
 		dealerPlayerOne: true,
 	}
@@ -27,8 +26,14 @@ type Match struct {
 	mostRecentlyPlayed [2]Card
 }
 
-// Deal will deal cards to playerOne and playerTwo.
-func (match *Match) Deal() error {
+// NewGame initializes a new game, consisting of a trick phase and a playoff.
+func (match *Match) NewGame(shuffle bool) error {
+	match.deck = buildDeck(shuffle)
+	return match.deal()
+}
+
+// deal will deal cards to playerOne and playerTwo.
+func (match *Match) deal() error {
 	for i := 0; i < 4; i++ {
 		if match.dealerPlayerOne {
 
@@ -109,8 +114,10 @@ func (match *Match) PlayerTwoMelds() [][]Card {
 }
 
 // TrickPhase returns true while there are cards in the stack.
-func (match *Match) TrickPhase() bool {
-	return len(match.deck.stack) > 0
+func (match *Match) TrickPhase() (trickPhase, lastCard bool) {
+	trickPhase = len(match.deck.stack) > 0
+	lastCard = len(match.deck.stack) < 2
+	return trickPhase, lastCard
 }
 
 // DealToPlayerOne deals a card to playerOne
@@ -135,15 +142,39 @@ func (match *Match) DealToPlayerTwo() error {
 	return nil
 }
 
+// DealTrumpToPlayerOne pushes the trump card to playerOne's hand.
+func (match *Match) DealTrumpToPlayerOne() error {
+	card, err := match.deck.getTrump()
+	if err != nil {
+		return err
+	}
+
+	match.playerOne.pushToHand(card)
+	return nil
+}
+
+// DealTrumpToPlayerTwo pushes the trump card to playerOne's hand.
+func (match *Match) DealTrumpToPlayerTwo() error {
+	card, err := match.deck.getTrump()
+	if err != nil {
+		return err
+	}
+
+	match.playerTwo.pushToHand(card)
+	return nil
+}
+
 // Playoff returns true while either player still has cards.
 func (match *Match) Playoff() bool {
-	return (match.playerOne.hasCards() || match.playerTwo.hasCards()) && !match.TrickPhase()
+	trickPhase, _ := match.TrickPhase()
+	return (match.playerOne.hasCards() || match.playerTwo.hasCards()) && !trickPhase
 }
 
 // PlayerOneTurn returns the internal value dealerPlayerOne.
+/*
 func (match *Match) PlayerOneTurn() bool {
-	return match.dealerPlayerOne
 }
+*/
 
 func (match *Match) storePlayerOneCard(card Card) {
 	match.mostRecentlyPlayed[0] = card

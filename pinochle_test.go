@@ -28,8 +28,8 @@ func TestHandContains(t *testing.T) {
 	playerOne := Human{}
 	playerTwo := Computer{}
 
-	m := InitializeMatch(&playerOne, &playerTwo, false, 1000)
-	m.Deal()
+	m := InitializeMatch(&playerOne, &playerTwo, 1000)
+	m.NewGame(false)
 
 	if !m.handContains(m.PlayerTwoHand(), Card{"9", "H"}) {
 		t.Errorf("%v contains %v", m.PlayerTwoHand(), Card{"9", "H"})
@@ -52,8 +52,10 @@ func TestBuildDeckShuffle(t *testing.T) {
 	playerOne := Human{}
 	playerTwo := Computer{}
 
-	shuffled := InitializeMatch(&playerOne, &playerTwo, true, 100)
-	notShuffled := InitializeMatch(&playerOne, &playerTwo, false, 100)
+	shuffled := InitializeMatch(&playerOne, &playerTwo, 100)
+	shuffled.NewGame(true)
+	notShuffled := InitializeMatch(&playerOne, &playerTwo, 100)
+	notShuffled.NewGame(false)
 
 	samePositionCount := 0
 	for i := range shuffled.deck.stack {
@@ -71,9 +73,9 @@ func TestDeal(t *testing.T) {
 	playerOne := Human{}
 	playerTwo := Computer{}
 
-	match := InitializeMatch(&playerOne, &playerTwo, true, 100)
+	match := InitializeMatch(&playerOne, &playerTwo, 100)
 
-	match.Deal()
+	match.NewGame(true)
 	if !(len(match.PlayerOneHand()) == 12 && len(match.PlayerTwoHand()) == 12) {
 		t.Errorf("playerOne hand: %v \n playerTwo hand: %v \n Stack: %v", match.PlayerOneHand(), match.PlayerTwoHand(), match.deck.stack)
 	}
@@ -129,38 +131,93 @@ func TestBuildDeckGeneration(t *testing.T) {
 func TestDealingCards(t *testing.T) {
 	playerOne := Human{}
 	playerTwo := Computer{}
+	match := InitializeMatch(&playerOne, &playerTwo, 100)
 
-	match := InitializeMatch(&playerOne, &playerTwo, true, 100)
-	match.Deal()
+	// capture dealerPlayerOne == false
+	for i := 0; i < 2; i++ {
 
-	for match.TrickPhase() {
-		errPlayPlayerOne := match.PlayerOnePlayed(match.playerOne.getHand()[0])
-		errPlayPlayerTwo := match.PlayerTwoPlayed(DummyCard)
-		if errPlayPlayerOne != nil {
-			t.Error("playerOne got an error while playing a card (trick phase) : " + errPlayPlayerOne.Error())
-		}
-		if errPlayPlayerTwo != nil {
-			t.Error("playerTwo got an error while playing a card (trick phase) : " + errPlayPlayerTwo.Error())
+		dealerVal := !match.dealerPlayerOne
+		err := match.NewGame(true)
+		if dealerVal != match.dealerPlayerOne {
+			t.Error("dealerPlayerOne was not inverted")
 		}
 
-		errDealPlayerOne := match.DealToPlayerOne()
-		errDealPlayerTwo := match.DealToPlayerTwo()
-		if errDealPlayerOne != nil {
-			t.Error("playerOne got an error while being dealt a card : " + errDealPlayerOne.Error())
+		if err != nil {
+			t.Error(err.Error())
 		}
-		if errDealPlayerTwo != nil {
-			t.Error("playerTwo got an error while being dealt a card : " + errDealPlayerTwo.Error())
-		}
-	}
 
-	for match.Playoff() {
-		errPlayPlayerOne := match.PlayerOnePlayed(match.playerOne.getHand()[0])
-		errPlayPlayerTwo := match.PlayerTwoPlayed(DummyCard)
-		if errPlayPlayerOne != nil {
-			t.Error("playerOne got an error while playing a card (playoff) : " + errPlayPlayerOne.Error())
+		for trickPhase, lastCard := match.TrickPhase(); trickPhase; trickPhase, lastCard = match.TrickPhase() {
+			// In an actual game, here you'd base which played first on match.PlayerOneTurn()
+			errPlayPlayerOne := match.PlayerOnePlayed(match.playerOne.getHand()[0])
+			errPlayPlayerTwo := match.PlayerTwoPlayed(DummyCard)
+			// ------------------------------------------------------------------------------
+			if errPlayPlayerOne != nil {
+				t.Error("playerOne got an error while playing a card (trick phase) : " +
+					errPlayPlayerOne.Error())
+			}
+
+			if errPlayPlayerTwo != nil {
+				t.Error("playerTwo got an error while playing a card (trick phase) : " +
+					errPlayPlayerTwo.Error())
+			}
+
+			var errDealPlayerOne, errDealPlayerTwo error
+			if !lastCard {
+				// In an actual game, whoever draws first should be based on match.PlayerOneWonTrick()
+				errDealPlayerOne = match.DealToPlayerOne()
+				errDealPlayerTwo = match.DealToPlayerTwo()
+			} else {
+				errDealPlayerOne = match.DealToPlayerOne()
+				errDealPlayerTwo = match.DealTrumpToPlayerTwo()
+				// ----------------------------------------------------------------------------------
+			}
+
+			if errDealPlayerOne != nil {
+				t.Error("playerOne got an error while being dealt a card : " +
+					errDealPlayerOne.Error())
+			}
+			if errDealPlayerTwo != nil {
+				t.Error("playerTwo got an error while being dealt a card : " +
+					errDealPlayerTwo.Error())
+			}
 		}
-		if errPlayPlayerTwo != nil {
-			t.Error("playerTwo got an error while playing a card (playoff)")
+
+		for match.Playoff() {
+			// Base of off match.PlayerOneWonTrick()
+			errPlayPlayerOne := match.PlayerOnePlayed(match.playerOne.getHand()[0])
+			errPlayPlayerTwo := match.PlayerTwoPlayed(DummyCard)
+			// -------------------------------------
+			if errPlayPlayerOne != nil {
+				t.Error("playerOne got an error while playing a card (playoff) : " +
+					errPlayPlayerOne.Error())
+			}
+			if errPlayPlayerTwo != nil {
+				t.Error("playerTwo got an error while playing a card (playoff)")
+			}
+		}
+
+		if len(match.deck.stack) != 0 {
+			t.Errorf("match.stack still has cards: %v", match.deck.stack)
+		}
+
+		if !CompareCards(match.deck.trump, DummyCard) {
+			t.Errorf("match.trump should be DummyCard but isn't: %v", match.deck.trump)
+		}
+
+		if match.playerOne.hasCards() {
+			t.Errorf("playerOne has cards in hand but shouldn't: %v", match.PlayerOneHand())
+		}
+
+		if match.playerTwo.hasCards() {
+			t.Errorf("playerTwo has cards in hand but shouldn't: %v", match.PlayerTwoHand())
+		}
+
+		if len(match.playerOne.getMelds()) != 0 {
+			t.Errorf("playerOne has melds but shouldn't: %v", match.playerOne.getMelds())
+		}
+
+		if len(match.playerTwo.getMelds()) != 0 {
+			t.Errorf("playerTwo has melds but shouldn't: %v", match.playerTwo.getMelds())
 		}
 	}
 }

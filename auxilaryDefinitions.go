@@ -40,6 +40,16 @@ func (d *Deck) pop() (Card, error) {
 	return top, nil
 }
 
+func (d *Deck) getTrump() (Card, error) {
+	if CompareCards(d.trump, DummyCard) {
+		return DummyCard, errors.New("type Deck has no valid trump")
+	}
+
+	retCard := d.trump
+	d.trump = DummyCard
+	return retCard, nil
+}
+
 var faceValues = []string{"A", "10", "K", "Q", "J", "9"}
 var suits = []string{"S", "D", "C", "H"}
 
