@@ -105,8 +105,8 @@ func (match *Match) PlayerTwoHand() []Card {
 
 // MatchOver returns whether or not one of the players but not both has reached the cap.
 func (match *Match) MatchOver() bool {
-	pOneWins := match.playerOne.score() >= match.playingTo
-	pTwoWins := match.playerTwo.score() >= match.playingTo
+	pOneWins := match.playerOne.meldScore() >= match.playingTo
+	pTwoWins := match.playerTwo.meldScore() >= match.playingTo
 	return (pOneWins || pTwoWins) && !(pOneWins && pTwoWins)
 }
 

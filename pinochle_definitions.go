@@ -13,6 +13,10 @@ type player interface {
 	getMelds() [][]Card
 	hasCards() bool
 	play(card Card) (Card, error)
+	scoreTrickPoints(points int)
+	scoreMeldPoints(points int)
+	mergeMeldsAndTricks()
+	meldScore() int
 }
 
 // Card is the fundamental type for each playing card.

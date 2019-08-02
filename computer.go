@@ -4,9 +4,19 @@ import "errors"
 
 // Computer is an object satisfying the player interface.
 type Computer struct {
-	hand         []Card
-	currentScore int
-	melds        [][]Card
+	hand              []Card
+	currentMeldScore  int
+	currentTrickScore int
+	currentScore      int
+	melds             [][]Card
+}
+
+func (c *Computer) scoreTrickPoints(points int) {
+	c.currentTrickScore += points
+}
+
+func (c *Computer) scoreMeldPoints(points int) {
+	c.currentMeldScore += points
 }
 
 func (c *Computer) getMelds() [][]Card {
@@ -17,7 +27,16 @@ func (c *Computer) hasCards() bool {
 	return len(c.hand) > 0
 }
 
+func (c *Computer) mergeMeldsAndTricks() {
+	c.currentScore = c.currentMeldScore + c.currentTrickScore
+}
+
+func (c *Computer) meldScore() int {
+	return c.currentMeldScore
+}
+
 func (c *Computer) score() int {
+	c.mergeMeldsAndTricks()
 	return c.currentScore
 }
 

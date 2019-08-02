@@ -4,9 +4,27 @@ import "fmt"
 
 // Human is an object satisfying the player interface.
 type Human struct {
-	hand         []Card
-	currentScore int
-	melds        [][]Card
+	hand              []Card
+	currentTrickScore int
+	currentMeldScore  int
+	currentScore      int
+	melds             [][]Card
+}
+
+func (h *Human) scoreTrickPoints(points int) {
+	h.currentTrickScore += points
+}
+
+func (h *Human) scoreMeldPoints(points int) {
+	h.currentMeldScore += points
+}
+
+func (h *Human) mergeMeldsAndTricks() {
+	h.currentScore = h.currentMeldScore + h.currentTrickScore
+}
+
+func (h *Human) meldScore() int {
+	return h.currentMeldScore
 }
 
 func (h *Human) hasCards() bool {
@@ -18,6 +36,7 @@ func (h *Human) getMelds() [][]Card {
 }
 
 func (h *Human) score() int {
+	h.mergeMeldsAndTricks()
 	return h.currentScore
 }
 
