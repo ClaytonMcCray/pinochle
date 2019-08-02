@@ -29,6 +29,7 @@ func TestHandContains(t *testing.T) {
 	playerTwo := Computer{}
 
 	m := InitializeMatch(&playerOne, &playerTwo, 1000)
+	m.dealerPlayerOne = true // assure that deal will be accurate
 	m.NewGame(false)
 
 	if !m.handContains(m.PlayerTwoHand(), Card{"9", "H"}) {
@@ -220,4 +221,147 @@ func TestDealingCards(t *testing.T) {
 			t.Errorf("playerTwo has melds but shouldn't: %v", match.playerTwo.getMelds())
 		}
 	}
+}
+
+func TestDecideTrickWinner(t *testing.T) {
+	pOne := Human{}
+	pTwo := Computer{}
+
+	match := InitializeMatch(&pOne, &pTwo, 100)
+	match.NewGame(true)
+
+	// test 1 -----------------------------------------
+	match.deck.trump = Card{"K", "S"}
+	match.playerOneLed = true
+	match.storePlayerOneCard(Card{"9", "S"})
+	match.storePlayerTwoCard(Card{"A", "H"})
+	match.DecideTrickWinner()
+	if !match.playerOneWonTrick {
+		t.Errorf("playerOne lost trick, but should've won: %v", match.mostRecentlyPlayed)
+	}
+
+	if !match.playerOneLed {
+		t.Error("playerOne should be trick leader but isn't")
+	}
+	// ------------------------------------------------
+
+	// test 2 -----------------------------------------
+	match.deck.trump = Card{"K", "S"}
+	match.playerOneLed = true
+	match.storePlayerOneCard(Card{"9", "S"})
+	match.storePlayerTwoCard(Card{"9", "S"})
+	match.DecideTrickWinner()
+	if !match.playerOneWonTrick {
+		t.Errorf("playerOne lost trick, but should've won: %v", match.mostRecentlyPlayed)
+	}
+
+	if !match.playerOneLed {
+		t.Error("playerOne should be trick leader but isn't")
+	}
+	// ------------------------------------------------
+
+	// test 3 -----------------------------------------
+	match.deck.trump = Card{"9", "H"}
+	match.playerOneLed = false
+	match.storePlayerOneCard(Card{"9", "H"})
+	match.storePlayerTwoCard(Card{"10", "H"})
+	match.DecideTrickWinner()
+	if match.playerOneWonTrick {
+		t.Errorf("playerOne won trick, but shouldn't have: %v", match.mostRecentlyPlayed)
+	}
+
+	if match.playerOneLed {
+		t.Error("playerOne is lead, but shouldn't be")
+	}
+	// --------------------------------------------------
+
+	// test 4 -------------------------------------------
+	match.deck.trump = Card{"A", "S"}
+	match.playerOneLed = true
+	match.storePlayerOneCard(Card{"10", "H"})
+	match.storePlayerTwoCard(Card{"9", "C"})
+	match.DecideTrickWinner()
+	if !match.playerOneWonTrick {
+		t.Errorf("playerOne didn't win trick, but should have: %v", match.mostRecentlyPlayed)
+	}
+
+	if !match.playerOneLed {
+		t.Error("playerOne isn't lead, but should be")
+	}
+	// --------------------------------------------------
+
+	// test 5 -------------------------------------------
+	match.deck.trump = Card{"A", "S"}
+	match.playerOneLed = false
+	match.storePlayerOneCard(Card{"10", "H"})
+	match.storePlayerTwoCard(Card{"9", "C"})
+	match.DecideTrickWinner()
+	if match.playerOneWonTrick {
+		t.Errorf("playerOne didn't win trick, but should have: %v", match.mostRecentlyPlayed)
+	}
+
+	if match.playerOneLed {
+		t.Error("playerOne isn't lead, but should be")
+	}
+	// --------------------------------------------------
+
+	// test 6 -------------------------------------------
+	match.deck.trump = Card{"10", "H"}
+	match.playerOneLed = true
+	match.storePlayerOneCard(Card{"A", "H"})
+	match.storePlayerTwoCard(Card{"A", "H"})
+	match.DecideTrickWinner()
+	if !match.playerOneWonTrick {
+		t.Errorf("playerOne didn't win trick, but should have: %v", match.mostRecentlyPlayed)
+	}
+
+	if !match.playerOneLed {
+		t.Error("playerOne isn't lead, but should be")
+	}
+	// -------------------------------------------------
+
+	// test 7 ------------------------------------------
+	match.deck.trump = Card{"10", "H"}
+	match.playerOneLed = true
+	match.storePlayerOneCard(Card{"A", "C"})
+	match.storePlayerTwoCard(Card{"A", "H"})
+	match.DecideTrickWinner()
+	if match.playerOneWonTrick {
+		t.Errorf("playerTwo didn't win trick, but should have: %v", match.mostRecentlyPlayed)
+	}
+
+	if match.playerOneLed {
+		t.Error("playerTwo isn't lead, but should be")
+	}
+	// -------------------------------------------------
+
+	// test 8 ------------------------------------------
+	match.deck.trump = Card{"10", "H"}
+	match.playerOneLed = true
+	match.storePlayerOneCard(Card{"Q", "C"})
+	match.storePlayerTwoCard(Card{"A", "C"})
+	match.DecideTrickWinner()
+	if match.playerOneWonTrick {
+		t.Errorf("playerTwo didn't win trick, but should have: %v", match.mostRecentlyPlayed)
+	}
+
+	if match.playerOneLed {
+		t.Error("playerTwo isn't lead, but should be")
+	}
+	// --------------------------------------------------
+
+	// test 9 ------------------------------------------
+	match.deck.trump = Card{"10", "H"}
+	match.playerOneLed = false
+	match.storePlayerOneCard(Card{"K", "C"})
+	match.storePlayerTwoCard(Card{"Q", "C"})
+	match.DecideTrickWinner()
+	if !match.playerOneWonTrick {
+		t.Errorf("playerOne didn't win trick, but should have: %v", match.mostRecentlyPlayed)
+	}
+
+	if !match.playerOneLed {
+		t.Error("playerOne isn't lead, but should be")
+	}
+	// --------------------------------------------------
 }

@@ -52,6 +52,14 @@ func (d *Deck) getTrump() (Card, error) {
 
 var faceValues = []string{"A", "10", "K", "Q", "J", "9"}
 var suits = []string{"S", "D", "C", "H"}
+var faceValueRanks = map[string]int{
+	faceValues[0]: len(faceValues),
+	faceValues[1]: len(faceValues) - 1,
+	faceValues[2]: len(faceValues) - 2,
+	faceValues[3]: len(faceValues) - 3,
+	faceValues[4]: len(faceValues) - 4,
+	faceValues[5]: len(faceValues) - 5,
+}
 
 // buildDeck generates a Deck; it shuffle determines whether or not the Deck is shuffled.
 func buildDeck(shuffle bool) Deck {

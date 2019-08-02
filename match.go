@@ -1,6 +1,9 @@
 package pinochle
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 // InitializeMatch will build a Match and return it
 func InitializeMatch(pOne, pTwo player, playingTo int) Match {
@@ -22,6 +25,8 @@ type Match struct {
 	playerTwo          player
 	deck               Deck
 	dealerPlayerOne    bool
+	playerOneWonTrick  bool
+	playerOneLed       bool
 	playingTo          int
 	mostRecentlyPlayed [2]Card
 }
@@ -29,7 +34,9 @@ type Match struct {
 // NewGame initializes a new game, consisting of a trick phase and a playoff.
 func (match *Match) NewGame(shuffle bool) error {
 	match.deck = buildDeck(shuffle)
-	return match.deal()
+	err := match.deal()
+	match.playerOneLed = match.dealerPlayerOne
+	return err
 }
 
 // deal will deal cards to playerOne and playerTwo.
@@ -228,9 +235,65 @@ func (match *Match) CardsPlayedInTrick() ([2]Card, error) {
 	return match.mostRecentlyPlayed, nil
 }
 
-/*
-func (match *Match) DecideTrickWinner() {}
+func (match *Match) setNextTrickLeader() {
+	match.playerOneLed = match.playerOneWonTrick
+}
 
+// DecideTrickWinner sets match.playerOneWonTrick based off of match.mostRecentlyPlayed.
+func (match *Match) DecideTrickWinner() error {
+
+	defer match.setNextTrickLeader()
+
+	if CompareCards(DummyCard, match.mostRecentlyPlayed[0]) {
+		return errors.New("playerOne's card not properly stored")
+	}
+
+	if CompareCards(DummyCard, match.mostRecentlyPlayed[1]) {
+		return errors.New("playerTwo's card not properly stored")
+	}
+
+	pOneCard := match.mostRecentlyPlayed[0]
+	pTwoCard := match.mostRecentlyPlayed[1]
+	trump, err := match.deck.getTrump()
+
+	if err != nil {
+		return err
+	}
+
+	if pOneCard.suit == trump.suit && pTwoCard.suit != trump.suit {
+		match.playerOneWonTrick = true
+		return nil
+	} else if pOneCard.suit != trump.suit && pTwoCard.suit == trump.suit {
+		match.playerOneWonTrick = false
+		return nil
+	} else {
+		if match.playerOneLed {
+			if pTwoCard.suit != pOneCard.suit {
+				match.playerOneWonTrick = true
+				return nil
+			} else if faceValueRanks[pOneCard.faceValue] >= faceValueRanks[pTwoCard.faceValue] {
+				match.playerOneWonTrick = true
+				return nil
+			} else {
+				match.playerOneWonTrick = false
+				return nil
+			}
+		} else {
+			if pOneCard.suit != pTwoCard.suit {
+				match.playerOneWonTrick = false
+				return nil
+			} else if faceValueRanks[pTwoCard.faceValue] >= faceValueRanks[pOneCard.faceValue] {
+				match.playerOneWonTrick = false
+				return nil
+			} else {
+				match.playerOneWonTrick = true
+				return nil
+			}
+		}
+	}
+}
+
+/*
 func (match *Match) AssignTrickPoints() {}
 
 func (match *Match) PlayerOneWonTrick() bool {}
