@@ -2,6 +2,8 @@ package pinochle
 
 import (
 	"testing"
+
+	"gotest.tools/assert"
 )
 
 func TestCompareCards(t *testing.T) {
@@ -201,10 +203,6 @@ func TestDealingCards(t *testing.T) {
 			t.Errorf("match.stack still has cards: %v", match.deck.stack)
 		}
 
-		if !CompareCards(match.deck.trump, DummyCard) {
-			t.Errorf("match.trump should be DummyCard but isn't: %v", match.deck.trump)
-		}
-
 		if match.playerOne.hasCards() {
 			t.Errorf("playerOne has cards in hand but shouldn't: %v", match.PlayerOneHand())
 		}
@@ -364,4 +362,81 @@ func TestDecideTrickWinner(t *testing.T) {
 		t.Error("playerOne isn't lead, but should be")
 	}
 	// --------------------------------------------------
+}
+
+func TestCompareCardSlices(t *testing.T) {
+	tOne := []Card{Card{"A", "S"}, Card{"K", "H"}, Card{"9", "C"}, Card{"K", "S"}}
+	tTwo := []Card{Card{"K", "S"}, Card{"A", "S"}, Card{"9", "C"}, Card{"K", "H"}}
+	if !compareCardSlices(tOne, tTwo) {
+		t.Error("out of order slices evaluated to false when they were the same")
+	}
+
+	tOne = []Card{Card{"Q", "S"}, Card{"K", "H"}, Card{"9", "C"}, Card{"K", "S"}}
+	tTwo = []Card{Card{"Q", "S"}, Card{"K", "H"}, Card{"9", "C"}, Card{"K", "S"}}
+	if !compareCardSlices(tOne, tTwo) {
+		t.Error("same order slices evaluated to false when they were the same")
+	}
+
+	tOne = []Card{Card{"K", "H"}, Card{"9", "C"}, Card{"K", "S"}}
+	tTwo = []Card{Card{"Q", "S"}, Card{"K", "H"}, Card{"9", "C"}, Card{"K", "S"}}
+	if compareCardSlices(tOne, tTwo) {
+		t.Error("different length slices evaluated the same but they weren't")
+	}
+
+	tOne = []Card{Card{"K", "S"}, Card{"Q", "S"}, Card{"K", "H"}, Card{"9", "C"}, Card{"K", "S"}}
+	tTwo = []Card{Card{"Q", "S"}, Card{"K", "H"}, Card{"9", "C"}, Card{"K", "S"}, Card{"9", "C"}}
+	if compareCardSlices(tOne, tTwo) {
+		t.Error("slices had different amounts of each card, but evaluated the same")
+	}
+
+	tOne = []Card{Card{"K", "S"}, Card{"Q", "S"}, Card{"K", "H"}, Card{"9", "C"}, Card{"K", "S"}}
+	tTwo = []Card{Card{"Q", "H"}, Card{"K", "H"}, Card{"9", "C"}, Card{"K", "S"}, Card{"9", "C"}}
+	if compareCardSlices(tOne, tTwo) {
+		t.Error("slices had different amounts of each card, but evaluated the same")
+	}
+
+	tOne = []Card{Card{"K", "S"}, Card{"A", "H"}}
+	tTwo = []Card{Card{"9", "C"}, Card{"9", "S"}}
+	if compareCardSlices(tOne, tTwo) {
+		t.Error("slices have completely different cards, but evaluated the same")
+	}
+}
+
+func TestValidateMeld(t *testing.T) {
+	var playerOne = &Human{}
+	var playerTwo = &Computer{}
+	m := InitializeMatch(playerOne, playerTwo, 1000)
+	m.dealerPlayerOne = true
+	m.NewGame(false)
+	assert.Assert(t, m.deck.trump == Card{"9", "D"})
+
+	meld := []Card{Card{"J", "D"}, Card{"Q", "S"}}
+	point, err := m.validateMeld(meld)
+	if err != nil || point != 40 {
+		t.Errorf("pinochle is a valid meld for 40 points: %v, %v", err, point)
+	}
+
+	meld = []Card{Card{"K", "D"}, Card{"Q", "D"}}
+	point, err = m.validateMeld(meld)
+	if err != nil || point != 40 {
+		t.Errorf("royal marriage is a valid meld for 40 points: %v, %v", err, point)
+	}
+
+	meld = []Card{Card{"A", "D"}, Card{"10", "D"}, Card{"K", "D"}, Card{"Q", "D"}, Card{"J", "D"}}
+	point, err = m.validateMeld(meld)
+	if err != nil || point != 150 {
+		t.Errorf("flush is a valid meld for 150 points: %v, %v", err, point)
+	}
+
+	meld = []Card{Card{"9", "D"}}
+	point, err = m.validateMeld(meld)
+	if err != nil || point != 10 {
+		t.Errorf("dix is a valid meld for 10 points: %v, %v", err, point)
+	}
+
+	meld = []Card{Card{"K", "S"}, Card{"Q", "H"}}
+	point, err = m.validateMeld(meld)
+	if err == nil {
+		t.Errorf("%v is not a valid meld", meld)
+	}
 }

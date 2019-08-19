@@ -11,6 +11,10 @@ type Human struct {
 	melds             [][]Card
 }
 
+func (h *Human) storeMeld(meld []Card) {
+	h.melds = append(h.melds, meld)
+}
+
 func (h *Human) scoreTrickPoints(points int) {
 	h.currentTrickScore += points
 }

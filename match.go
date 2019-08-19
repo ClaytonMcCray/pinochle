@@ -29,6 +29,7 @@ type Match struct {
 	playerOneLed       bool
 	playingTo          int
 	mostRecentlyPlayed [2]Card
+	meldSlices         validMeldSlices
 }
 
 // NewGame initializes a new game, consisting of a trick phase and a playoff.
@@ -36,7 +37,25 @@ func (match *Match) NewGame(shuffle bool) error {
 	match.deck = buildDeck(shuffle)
 	err := match.deal()
 	match.playerOneLed = match.dealerPlayerOne
+	match.buildMeldSlices()
 	return err
+}
+
+func (match *Match) buildMeldSlices() {
+	suit := match.deck.trump.suit
+	match.meldSlices.flush = []Card{Card{"A", suit}, Card{"10", suit}, Card{"K", suit}, Card{"Q", suit}, Card{"J", suit}}
+	match.meldSlices.royalMarriage = []Card{Card{"K", suit}, Card{"Q", suit}}
+	match.meldSlices.clubMarriage = []Card{Card{"K", "C"}, Card{"Q", "C"}}
+	match.meldSlices.spadeMarriage = []Card{Card{"K", "S"}, Card{"Q", "S"}}
+	match.meldSlices.diamondMarriage = []Card{Card{"K", "D"}, Card{"Q", "D"}}
+	match.meldSlices.heartMarriage = []Card{Card{"K", "H"}, Card{"Q", "H"}}
+	match.meldSlices.dix = []Card{Card{"9", suit}}
+	match.meldSlices.hundredAces = []Card{Card{"A", "S"}, Card{"A", "H"}, Card{"A", "C"}, Card{"A", "D"}}
+	match.meldSlices.eightyKings = []Card{Card{"K", "S"}, Card{"K", "H"}, Card{"K", "C"}, Card{"K", "D"}}
+	match.meldSlices.sixtyQueens = []Card{Card{"Q", "S"}, Card{"Q", "H"}, Card{"Q", "C"}, Card{"Q", "D"}}
+	match.meldSlices.fortyJacks = []Card{Card{"J", "S"}, Card{"J", "H"}, Card{"J", "C"}, Card{"Q", "D"}}
+	match.meldSlices.pinochle = []Card{Card{"Q", "S"}, Card{"J", "D"}}
+	match.meldSlices.doublePinochle = []Card{Card{"Q", "S"}, Card{"J", "D"}, Card{"Q", "S"}, Card{"J", "D"}}
 }
 
 // deal will deal cards to playerOne and playerTwo.
@@ -291,6 +310,58 @@ func (match *Match) DecideTrickWinner() error {
 			}
 		}
 	}
+}
+
+// validateMeld determines whether or not a real meld has been played, and then
+// returns the correct point value
+func (match *Match) validateMeld(attempt []Card) (int, error) {
+	var scoredPoints int
+	var err error
+	if compareCardSlices(attempt, match.meldSlices.flush) {
+		scoredPoints = match.pointValues.classA.flush
+		err = nil
+	} else if compareCardSlices(attempt, match.meldSlices.royalMarriage) {
+		scoredPoints = match.pointValues.classA.royalMarriage
+		err = nil
+	} else if compareCardSlices(attempt, match.meldSlices.clubMarriage) {
+		scoredPoints = match.pointValues.classA.marriage
+		err = nil
+	} else if compareCardSlices(attempt, match.meldSlices.diamondMarriage) {
+		scoredPoints = match.pointValues.classA.marriage
+		err = nil
+	} else if compareCardSlices(attempt, match.meldSlices.spadeMarriage) {
+		scoredPoints = match.pointValues.classA.marriage
+		err = nil
+	} else if compareCardSlices(attempt, match.meldSlices.heartMarriage) {
+		scoredPoints = match.pointValues.classA.marriage
+		err = nil
+	} else if compareCardSlices(attempt, match.meldSlices.dix) {
+		scoredPoints = match.pointValues.classA.dix
+		err = nil
+	} else if compareCardSlices(attempt, match.meldSlices.hundredAces) {
+		scoredPoints = match.pointValues.classB.hundredAces
+		err = nil
+	} else if compareCardSlices(attempt, match.meldSlices.eightyKings) {
+		scoredPoints = match.pointValues.classB.eightyKings
+		err = nil
+	} else if compareCardSlices(attempt, match.meldSlices.sixtyQueens) {
+		scoredPoints = match.pointValues.classB.sixtyQueens
+		err = nil
+	} else if compareCardSlices(attempt, match.meldSlices.fortyJacks) {
+		scoredPoints = match.pointValues.classB.fortyJacks
+		err = nil
+	} else if compareCardSlices(attempt, match.meldSlices.pinochle) {
+		scoredPoints = match.pointValues.classC.pinochle
+		err = nil
+	} else if compareCardSlices(attempt, match.meldSlices.doublePinochle) {
+		scoredPoints = match.pointValues.classC.doublePinochle
+		err = nil
+	} else {
+		scoredPoints = 0
+		err = errors.New("attempted meld is invalid")
+	}
+
+	return scoredPoints, err
 }
 
 /*

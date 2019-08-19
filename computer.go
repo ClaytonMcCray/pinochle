@@ -11,6 +11,10 @@ type Computer struct {
 	melds             [][]Card
 }
 
+func (c *Computer) storeMeld(meld []Card) {
+	c.melds = append(c.melds, meld)
+}
+
 func (c *Computer) scoreTrickPoints(points int) {
 	c.currentTrickScore += points
 }
