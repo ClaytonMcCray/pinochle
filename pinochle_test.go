@@ -2,8 +2,6 @@ package pinochle
 
 import (
 	"testing"
-
-	"gotest.tools/assert"
 )
 
 func TestCompareCards(t *testing.T) {
@@ -408,7 +406,10 @@ func TestValidateMeld(t *testing.T) {
 	m := InitializeMatch(playerOne, playerTwo, 1000)
 	m.dealerPlayerOne = true
 	m.NewGame(false)
-	assert.Assert(t, m.deck.trump == Card{"9", "D"})
+	tmp := Card{"9", "D"}
+	if m.deck.trump != tmp {
+		t.Errorf("invariant broken: m.deck.trump != Card{\"9\", \"D\"}, %s", m.deck.trump)
+	}
 
 	meld := []Card{Card{"J", "D"}, Card{"Q", "S"}}
 	point, err := m.validateMeld(meld)
